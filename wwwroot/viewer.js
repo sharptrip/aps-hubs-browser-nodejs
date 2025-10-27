@@ -1,3 +1,4 @@
+let lastToken;
 async function getAccessToken(callback) {
     while (true) {
         try {
@@ -5,6 +6,7 @@ async function getAccessToken(callback) {
             if (!resp.ok)
                 throw new Error(await resp.text());
             const { access_token, expires_in } = await resp.json();
+            lastToken = `Bearer ${access_token}`;
             console.log(`Obtained access token: ${access_token}`);
             callback(access_token, 5); // make it valid for 5 seconds
             return;
@@ -15,10 +17,12 @@ async function getAccessToken(callback) {
     }
 }
 
+let globalHeaders;
 export function initViewer(container) {
     return new Promise(function (resolve, reject) {
         Autodesk.Viewing.FeatureFlags.set('DS_ENDPOINTS', true);
         Autodesk.Viewing.Initializer({ env: 'AutodeskProduction', getAccessToken }, function () {
+            globalHeaders = Autodesk.Viewing.endpoint.HTTP_REQUEST_HEADERS;
             const config = {
                 extensions: ['Autodesk.DocumentBrowser']
             };
@@ -32,6 +36,14 @@ export function initViewer(container) {
 
 export function loadModel(viewer, urn) {
     function onDocumentLoadSuccess(doc) {
+        if (Autodesk.Viewing.endpoint._endpoints) {
+            Autodesk.Viewing.endpoint._endpoints.HTTP_REQUEST_HEADERS = Object.assign(globalHeaders, Autodesk.Viewing.endpoint._endpoints.HTTP_REQUEST_HEADERS);
+        }
+        if (Autodesk.Viewing.endpoint.HTTP_REQUEST_HEADERS.Authorization === lastToken && Autodesk.Viewing.endpoint.HTTP_REQUEST_HEADERS.Authorization === Autodesk.Viewing.endpoint._endpoints.HTTP_REQUEST_HEADERS.Authorization) {
+            console.warn("TOKEN OK");
+        } else {
+            console.warn("TOKEN NOT OK");
+        }
         viewer.loadDocumentNode(doc, doc.getRoot().getDefaultGeometry());
     }
     function onDocumentLoadFailure(code, message) {
