@@ -36,9 +36,6 @@ export function initViewer(container) {
 
 export function loadModel(viewer, urn) {
     function onDocumentLoadSuccess(doc) {
-        if (Autodesk.Viewing.endpoint._endpoints) {
-            Autodesk.Viewing.endpoint._endpoints.HTTP_REQUEST_HEADERS = Object.assign(globalHeaders, Autodesk.Viewing.endpoint._endpoints.HTTP_REQUEST_HEADERS);
-        }
         if (Autodesk.Viewing.endpoint.HTTP_REQUEST_HEADERS.Authorization === lastToken && Autodesk.Viewing.endpoint.HTTP_REQUEST_HEADERS.Authorization === Autodesk.Viewing.endpoint._endpoints.HTTP_REQUEST_HEADERS.Authorization) {
             console.warn("TOKEN OK");
         } else {
